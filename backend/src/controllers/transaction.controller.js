@@ -165,7 +165,6 @@ if(req.user?.recieveTransferEmails !== false){
 }
 if(toUserAccount.user && toUserAccount.user.email !== req.user.email && toUserEmail.user.recieveTransferEmails !== false){
     await emailService.sendTransactionEmail(toUserAccount.user.email, toUserAccount.user.name,amount,toAccount);
-
 }
 
 // if (toUserAccount.user && toUserAccount.user.email !== req.user.email) {
