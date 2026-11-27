@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema({
         minlength:[6,"password should contain more than 6 character"],
         select : false
     }, 
+    recieveTransferEmails: {
+        type: Boolean, 
+        default: true
+    },
     systemUser:{
         type : Boolean,
         default : false,

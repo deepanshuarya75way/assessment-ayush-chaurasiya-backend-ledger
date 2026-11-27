@@ -13,4 +13,10 @@ router.post("/login",authController.userLoginController)
 /* POST /api/auth/logout */
 router.post("/logout",authMiddleware.authMiddleware,authController.userLogoutController)
 
+/* GET /api/auth/email-preference */
+router.get("/email-preference",authMiddleware.authMiddleware,authController.userGetEmailPreferenceController)
+
+/* PATCH /api/auth/email-preference */
+router.patch("/email-preference",authMiddleware.authMiddleware,authController.userUpdateEmailPreferenceController)
+
 module.exports = router

@@ -5,10 +5,15 @@ const path = require('path');
 
 
 const app = express(); // server ka instance
+const cors = require("cors")
 
 app.use(express.json());  //express server req.body ke andr ke data ko nahi padh skta 
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../../frontend')));
+app.use(cors({
+	origin: true,
+	credentials: true
+}))
 
 
 app.get('/', (req, res) => {

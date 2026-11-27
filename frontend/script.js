@@ -1,4 +1,5 @@
-const API = `${window.location.origin}/api`;
+// const API = ${window.location.origin}/api`;
+const API = `http://localhost:3000/api`;
 const state = { accounts: [], activity: [], user: null };
 const $ = (id) => document.getElementById(id);
 const money = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value || 0);
@@ -25,7 +26,8 @@ function authMode(mode) {
 function showDashboard(user) {
   state.user = user; $('userName').textContent = user.name; $('userEmail').textContent = user.email;
   $('avatar').textContent = (user.name || user.email).split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase();
-  $('authScreen').classList.add('hidden'); $('appScreen').classList.remove('hidden'); $('fundsNav').classList.toggle('hidden', !user.systemUser); loadAccounts(); loadHistory();
+  $('authScreen').classList.add('hidden'); $('appScreen').classList.remove('hidden'); $('fundsNav').classList.toggle('hidden', !user.systemUser); loadAccounts(); loadHistory(); loadEmailPreference();
+
 }
 async function loadAccounts() {
   try {
@@ -57,6 +59,51 @@ async function loadHistory() {
 }
 function addActivity(label, amount, status = 'COMPLETED') { state.activity.unshift({ label, amount, status }); $('activity').innerHTML = state.activity.slice(0, 6).map((x) => `<div class="activity-row"><div><strong>${x.label}</strong><small>${x.status} · just now</small></div><span class="balance">${money(x.amount)}</span></div>`).join(''); $('lastAmount').textContent = money(amount); $('lastStatus').textContent = status; }
 
+async function loadEmailPreference(){
+  const emailToggle = document.getElementById("transfer-email-toggle")
+  const emailPrefStatus = document.getElementById("email-pref-status")
+  if(!emailToggle) return;
+  
+  try {
+    const data = await request('/auth/email-preference');
+    emailToggle.checked = Boolean(data.recieveTransferEmails);
+  }catch(err){
+    console.error('Failed to load email preference:', err)
+  }
+}
+
+function initialEmailPreferenceToggle(){
+  const emailToggle = document.getElementById("transfer-email-toggle")
+  const emailPrefStatus = document.getElementById("email-pref-status")
+  if(!emailToggle) return
+
+  emailToggle.addEventListener('change', async(e) => {
+    const newValue = e.target.checked;
+    emailToggle.disabled = true;
+    if(emailPrefStatus) emailPrefStatus.textContent = "Saving...";
+
+    try {
+      const data = await request("/auth/email-preference", {
+        method: 'PATCH',
+        body: JSON.stringify({recieveTransferEmails: newValue})
+      })
+
+      emailToggle.checked = Boolean(data.recieveTransferEmails)
+      if(emailPrefStatus) emailPrefStatus.textContent = "Saved";
+    } catch(err){
+      
+      emailToggle.checked = !newValue
+      if(emailPrefStatus) emailPrefStatus.textContent = err.message || "Failed";
+    } finally{
+      
+      emailToggle.disabled = false
+      setTimeout(() => {
+        if(emailPrefStatus) emailPrefStatus.textContent = ''
+      }, 2000)
+    }
+  })
+}
+
 document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => authMode(button.dataset.mode)));
 $('authForm').addEventListener('submit', async (event) => { event.preventDefault(); const register = !$('nameWrap').classList.contains('hidden'); try { const data = await request(register ? '/auth/register' : '/auth/login', { method: 'POST', body: JSON.stringify({ email: $('email').value, password: $('password').value, ...(register ? { name: $('name').value } : {}) }) }); localStorage.setItem('ledgerToken', data.token); localStorage.setItem('ledgerUser', JSON.stringify(data.user)); showDashboard(data.user); } catch (error) { message('authMessage', error.message); } });
 document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.view').forEach((view) => view.classList.remove('active-view')); $(`${button.dataset.view}`).classList.add('active-view'); document.querySelectorAll('.nav-link').forEach((item) => item.classList.toggle('active', item === button)); $('viewTitle').textContent = button.querySelector('span').textContent; }));
@@ -67,6 +114,7 @@ $('fundsForm').addEventListener('submit', async (event) => { event.preventDefaul
 async function logout() { try { await request('/auth/logout', { method: 'POST' }); } catch (_) {} localStorage.removeItem('ledgerToken'); localStorage.removeItem('ledgerUser'); location.reload(); }
 setInterval(() => { if (!document.getElementById('appScreen').classList.contains('hidden')) { loadAccounts(); loadHistory(); } }, 15000);
 $('logout').addEventListener('click', logout); $('mobileLogout').addEventListener('click', logout); authMode('login');
+initialEmailPreferenceToggle()
 
 window.addEventListener('focus', loadAccounts);
 

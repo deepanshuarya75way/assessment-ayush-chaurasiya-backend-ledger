@@ -160,16 +160,22 @@ try {
 /*
 * 10.Send email notification
 */
-await emailService.sendTransactionEmail(req.user.email, req.user.name,amount,toAccount);
-
-if (toUserAccount.user && toUserAccount.user.email !== req.user.email) {
-    await emailService.sendTransactionEmail(
-        toUserAccount.user.email,
-        toUserAccount.user.name,
-        amount,
-        toAccount
-    );
+if(req.user?.recieveTransferEmails !== false){
+    await emailService.sendTransactionEmail(req.user.email, req.user.name,amount,toAccount);
 }
+if(toUserAccount.user && toUserAccount.user.email !== req.user.email && toUserEmail.user.recieveTransferEmails !== false){
+    await emailService.sendTransactionEmail(toUserAccount.user.email, toUserAccount.user.name,amount,toAccount);
+
+}
+
+// if (toUserAccount.user && toUserAccount.user.email !== req.user.email) {
+//     await emailService.sendTransactionEmail(
+//         toUserAccount.user.email,
+//         toUserAccount.user.name,
+//         amount,
+//         toAccount
+//     );
+// }
 
 return res.status(201).json({
     message:"Transaction completed successfully",

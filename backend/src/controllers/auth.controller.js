@@ -27,11 +27,11 @@ async function userRegisterController(req, res) {
         name
     });
 
-    // Send registration email
-    await emailService.sendRegistrationEmail(
-        user.email,
-        user.name
-    );
+    // // Send registration email
+    // await emailService.sendRegistrationEmail(
+    //     user.email,
+    //     user.name
+    // );
 
     const token = jwt.sign(
         { userId: user._id },
@@ -107,8 +107,76 @@ async function userLogoutController(req, res) {
     return res.status(200).json({ message: "Logout successful" });
 }
 
+/** 
+* - get user email preference controller 
+* - GET /api/auth/email-preference
+*  curl -X GET http://localhost:3000/api/auth/email-preference -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YjA5Mjg1NmIzYjBjNjZhZGM5NDliOGQiLCJpYXQiOjE3OTU3Njc5OTQsImV4cCI6MTc5NjAyNzE5NH0.CpJsrMwpm605YY8vdWzDELuTkBwQwBLk-OLNdiDm5MU"
+*/
+
+
+async function userGetEmailPreferenceController(req, res) {
+    try{
+        const user = await userModel.findById(req.user._id);
+        if(!user){
+            return res.status(404).json({
+                message: "User not found",
+                status: "failed",
+            })
+        }
+        return res.status(200).json({
+                message: "Email Preference fetched",
+                status: "success",
+                recieveTransferEmails: user.recieveTransferEmails
+        })
+    }catch (error){
+        return res.status(500).json({
+            message: "Failed to fetch email preference",
+            status:"failed"
+        })
+    }
+}
+
+/** 
+* - update user email preference controller 
+* - PATCH /api/auth/email-preference
+* curl -X PATCH  http://localhost:3000/api/auth/email-preference -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YjA5Mjg1NmIzYjBjNjZhZGM5NDliOGQiLCJpYXQiOjE3OTU3Njc5OTQsImV4cCI6MTc5NjAyNzE5NH0.CpJsrMwpm605YY8vdWzDELuTkBwQwBLk-OLNdiDm5MU" -H "Content-Type: application/json" -d '{"recieveTransferEmails": true}'
+*/
+
+async function userUpdateEmailPreferenceController(req, res) {
+    try{
+        const {recieveTransferEmails} = req.body;
+        if(typeof recieveTransferEmails !== "boolean"){
+            return res.status(400).json({
+                message: "recieveTransferEmails must be boolean",
+                status: "failed"
+            })
+        }
+        // const updatedUser = await userModel.findByIdAndUpdate(req.user._id, {recieveTransferEmails}, {new: true});
+        // if(!updatedUser){
+        //     return res.status(404).json({
+        //         message: "User not found",
+        //         status: "failed",
+        //     })
+        // }
+        req.user.recieveTransferEmails = recieveTransferEmails
+        await req.user.save();
+
+        return res.status(200).json({
+                message: "Email Preference updated successfully",
+                status: "success",
+                recieveTransferEmails: req.user.recieveTransferEmails
+        })
+    }catch (error){
+        return res.status(500).json({
+            message: "Failed to update email preference",
+            status:"failed"
+        })
+    }
+}
 module.exports = {
     userRegisterController,
     userLoginController,
-    userLogoutController
+    userLogoutController,
+    userGetEmailPreferenceController,
+    userUpdateEmailPreferenceController
 }
